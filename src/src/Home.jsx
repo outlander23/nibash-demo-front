@@ -4,8 +4,11 @@ import axios from "axios";
 function Home() {
   const [rooms, setRooms] = useState([]);
   const [extras, setExtras] = useState([]);
-  const [fullmeal, setFullmeal] = useState([]);
-  const [halfmeal, sethalfmeal] = useState([]);
+  const [fullMeals, setFullMeals] = useState([]);
+  const [halfMeals, setHalfMeals] = useState([]);
+
+  const [totalGivenTaka, setTotalGivenTaka] = useState(0);
+  const [totalCostTillNow, setTotalCostTillNow] = useState(0);
 
   useEffect(() => {
     // Fetch data using axios
@@ -13,10 +16,10 @@ function Home() {
       try {
         const response = await axios.get("http://localhost:3000/meals/table");
         setRooms(response.data);
-        const getresponse = await axios.get(
+        const getResponse = await axios.get(
           "http://localhost:3000/meals/extra"
         );
-        setExtras(getresponse.data);
+        setExtras(getResponse.data);
       } catch (error) {
         console.error("Error fetching data:", error);
       }
@@ -24,6 +27,32 @@ function Home() {
 
     fetchData();
   }, []); // Empty dependency array ensures this effect runs only once, similar to componentDidMount
+
+  // Function to calculate full and half meals for each date
+  useEffect(() => {
+    const calculateMeals = () => {
+      // Initialize arrays to store meal counts for each date
+      const fullMealsArr = Array.from({ length: 31 }, () => 0);
+      const halfMealsArr = Array.from({ length: 31 }, () => 0);
+
+      // Iterate over rooms data to count meals for each date
+      rooms.forEach((room) => {
+        room.roommeal.forEach((meal, index) => {
+          if (meal >= 1) {
+            fullMealsArr[index] += 1;
+          } else if (meal === 0.5) {
+            halfMealsArr[index] += 1;
+          }
+        });
+      });
+
+      // Update state with calculated meal counts
+      setFullMeals(fullMealsArr);
+      setHalfMeals(halfMealsArr);
+    };
+
+    calculateMeals();
+  }, [rooms]);
 
   return (
     <div>
@@ -59,7 +88,7 @@ function Home() {
                       key={index}
                       className="border border-green-800 px-4 py-2"
                     >
-                      {meal == -1 ? "" : meal}
+                      {meal === -1 ? "" : meal}
                     </td>
                   )
               )}
@@ -72,8 +101,21 @@ function Home() {
               </td>
             </tr>
           ))}
-
-          <tr></tr>
+          {/* Render row for full and half meals */}
+          <tr>
+            <td className="border border-green-800 px-4 py-2">Meals</td>
+            {fullMeals.map(
+              (mealCount, index) =>
+                index >= 1 && (
+                  <td
+                    key={index}
+                    className="border border-green-800 px-4 py-2"
+                  >{`Full: ${mealCount}, Half: ${halfMeals[index]}`}</td>
+                )
+            )}
+            <td className="border border-green-800 px-4 py-2"></td>
+            <td className="border border-green-800 px-4 py-2"></td>
+          </tr>
         </tbody>
       </table>
       {/* Render ExtraCostCard components for each extra */}
