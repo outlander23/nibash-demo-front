@@ -27,6 +27,49 @@ function Home() {
 
     fetchData();
   }, []); // Empty dependency array ensures this effect runs only once, similar to componentDidMount
+  useEffect(() => {
+    const calculateMealsAndTotals = () => {
+      // Initialize arrays to store meal counts for each date
+      const fullMealsArr = Array.from({ length: 31 }, () => 0);
+      const halfMealsArr = Array.from({ length: 31 }, () => 0);
+
+      // Initialize total cost and total given taka
+      let totalFullMealsCost = 0;
+      let totalHalfMealsCost = 0;
+      let totalExtraCost = 0;
+      let totalGivenTaka = 0;
+
+      // Iterate over rooms data to count meals for each date and calculate total cost and given taka
+      rooms.forEach((room) => {
+        room.roommeal.forEach((meal, index) => {
+          if (meal >= 1) {
+            fullMealsArr[index] += meal;
+            totalFullMealsCost += 65 * meal; // Assuming full meal cost is 65
+          } else if (meal === 0.5) {
+            halfMealsArr[index] += 1;
+            totalHalfMealsCost += 40; // Assuming half meal cost is 40
+          }
+        });
+
+        // Calculate total given taka
+        totalGivenTaka += room.totalPayment;
+      });
+
+      // Calculate total extra cost
+      totalExtraCost = extras.reduce((acc, curr) => acc + curr.amount, 0);
+
+      // Update state with calculated values
+      setFullMeals(fullMealsArr);
+      setHalfMeals(halfMealsArr);
+      console.log(totalFullMealsCost, totalHalfMealsCost, totalExtraCost);
+      setTotalCostTillNow(
+        totalFullMealsCost + totalHalfMealsCost + totalExtraCost
+      );
+      setTotalGivenTaka(totalGivenTaka);
+    };
+
+    calculateMealsAndTotals();
+  }, [rooms, extras]);
 
   // Function to calculate full and half meals for each date
   useEffect(() => {
@@ -39,7 +82,7 @@ function Home() {
       rooms.forEach((room) => {
         room.roommeal.forEach((meal, index) => {
           if (meal >= 1) {
-            fullMealsArr[index] += 1;
+            fullMealsArr[index] += meal;
           } else if (meal === 0.5) {
             halfMealsArr[index] += 1;
           }
@@ -129,6 +172,11 @@ function Home() {
           />
         ))}
       </div>
+
+      <p> total cost till now: {totalCostTillNow} </p>
+      <p> total given till now: {totalGivenTaka} </p>
+
+      <p>remain: {totalGivenTaka - totalCostTillNow} </p>
     </div>
   );
 }
