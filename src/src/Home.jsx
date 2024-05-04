@@ -10,6 +10,15 @@ function Home() {
   const [totalGivenTaka, setTotalGivenTaka] = useState(0);
   const [totalCostTillNow, setTotalCostTillNow] = useState(0);
 
+  // State variables to hold input values
+  const [amountInput, setAmountInput] = useState(0);
+  const [newOwnerNameInput, setNewOwnerNameInput] = useState("");
+  const [roomNumber, setRoomNumber] = useState(0);
+  const [dateOfChangeMeal, setDateOfChangeMeal] = useState(0);
+  const [stateOfMeal, setStateOfMeal] = useState(0);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   useEffect(() => {
     // Fetch data using axios
     const fetchData = async () => {
@@ -26,42 +35,36 @@ function Home() {
     };
 
     fetchData();
-  }, []); // Empty dependency array ensures this effect runs only once, similar to componentDidMount
+  }, [isSubmitting]);
+
   useEffect(() => {
     const calculateMealsAndTotals = () => {
-      // Initialize arrays to store meal counts for each date
       const fullMealsArr = Array.from({ length: 31 }, () => 0);
       const halfMealsArr = Array.from({ length: 31 }, () => 0);
 
-      // Initialize total cost and total given taka
       let totalFullMealsCost = 0;
       let totalHalfMealsCost = 0;
       let totalExtraCost = 0;
       let totalGivenTaka = 0;
 
-      // Iterate over rooms data to count meals for each date and calculate total cost and given taka
       rooms.forEach((room) => {
         room.roommeal.forEach((meal, index) => {
           if (meal >= 1) {
             fullMealsArr[index] += meal;
-            totalFullMealsCost += 65 * meal; // Assuming full meal cost is 65
+            totalFullMealsCost += 65 * meal;
           } else if (meal === 0.5) {
             halfMealsArr[index] += 1;
-            totalHalfMealsCost += 40; // Assuming half meal cost is 40
+            totalHalfMealsCost += 40;
           }
         });
 
-        // Calculate total given taka
         totalGivenTaka += room.totalPayment;
       });
 
-      // Calculate total extra cost
       totalExtraCost = extras.reduce((acc, curr) => acc + curr.amount, 0);
 
-      // Update state with calculated values
       setFullMeals(fullMealsArr);
       setHalfMeals(halfMealsArr);
-      console.log(totalFullMealsCost, totalHalfMealsCost, totalExtraCost);
       setTotalCostTillNow(
         totalFullMealsCost + totalHalfMealsCost + totalExtraCost
       );
@@ -69,16 +72,13 @@ function Home() {
     };
 
     calculateMealsAndTotals();
-  }, [rooms, extras]);
+  }, [rooms, extras, isSubmitting]);
 
-  // Function to calculate full and half meals for each date
   useEffect(() => {
     const calculateMeals = () => {
-      // Initialize arrays to store meal counts for each date
       const fullMealsArr = Array.from({ length: 31 }, () => 0);
       const halfMealsArr = Array.from({ length: 31 }, () => 0);
 
-      // Iterate over rooms data to count meals for each date
       rooms.forEach((room) => {
         room.roommeal.forEach((meal, index) => {
           if (meal >= 1) {
@@ -89,7 +89,6 @@ function Home() {
         });
       });
 
-      // Update state with calculated meal counts
       setFullMeals(fullMealsArr);
       setHalfMeals(halfMealsArr);
     };
@@ -97,9 +96,201 @@ function Home() {
     calculateMeals();
   }, [rooms]);
 
+  const updateMeal = async (roomNumber, currentDate, state) => {
+    try {
+      await axios.post("http://localhost:3000/meals/update-room-meal", {
+        roomNumber,
+        currentDate,
+        state,
+      });
+    } catch (error) {
+      console.error("Error updating meal:", error);
+    }
+    setIsSubmitting(false);
+  };
+
+  const addAmount = async (roomNumber, date, amount) => {
+    try {
+      await axios.post("http://localhost:3000/meals/add-amount", {
+        roomNumber,
+        date,
+        amount,
+      });
+    } catch (error) {
+      console.error("Error adding amount:", error);
+    }
+    setIsSubmitting(false);
+  };
+
+  const generateTodayMeals = async () => {
+    try {
+      await axios.post("http://localhost:3000/meals/generate-today-meal");
+    } catch (error) {
+      console.error("Error generating today's meals:", error);
+    }
+    setIsSubmitting(false);
+  };
+
+  const updateRoomOwnerName = async (roomNumber, newOwnerName) => {
+    try {
+      await axios.put("http://localhost:3000/meals/updateRoomOwnerName", {
+        roomNumber,
+        newOwnerName,
+      });
+    } catch (error) {
+      console.error("Error updating room owner name:", error);
+    }
+    setIsSubmitting(false);
+  };
+
+  const handleAddAmountSubmit = (event) => {
+    setIsSubmitting(true);
+    event.preventDefault();
+    console.log("add amount", roomNumber, dateOfChangeMeal, amountInput);
+    addAmount(roomNumber * 1, dateOfChangeMeal * 1, amountInput * 1);
+  };
+
+  const handleUpdateOwnerNameSubmit = (event) => {
+    setIsSubmitting(true);
+    event.preventDefault();
+
+    // updateRoomOwnerName(roomNumber, newOwnerNameInput);
+  };
+
+  const handleUpdateRoomMeal = (event) => {
+    setIsSubmitting(true);
+    event.preventDefault();
+    console.log("meal update", roomNumber, dateOfChangeMeal, stateOfMeal);
+    updateMeal(roomNumber * 1, dateOfChangeMeal * 1, stateOfMeal * 1);
+  };
+
+  const handleGenerateMeal = (event) => {
+    setIsSubmitting(true);
+    event.preventDefault();
+    generateTodayMeals();
+  };
+
   return (
     <div>
-      <h2>Room Details</h2>
+      <div className="container mt-4">
+        <div className="flex flex-col md:flex-col justify-center items-center mt-4">
+          <div className="flex justify-center items-center mr-4 mb-5">
+            <div className="form-group flex flex-row items-center mb-4 mr-2">
+              <label
+                htmlFor="roomNumberInput"
+                className="block text-lg font-medium text-gray-700 mr-2"
+              >
+                Room Number:
+              </label>
+              <select
+                className="form-control p-2 text-lg"
+                id="roomNumberInput"
+                value={roomNumber}
+                onChange={(e) => setRoomNumber(e.target.value)}
+              >
+                {[...Array(29)].map((_, index) => (
+                  <option key={index} value={index + 101}>
+                    {index + 101}
+                  </option>
+                ))}
+                {[...Array(29)].map((_, index) => (
+                  <option key={index} value={index + 201}>
+                    {index + 201}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group flex flex-row items-center mb-4">
+              <label htmlFor="dateInput" className="mr-2">
+                Date
+              </label>
+              <select
+                className="form-control p-2 text-lg"
+                id="dateInput"
+                value={dateOfChangeMeal}
+                onChange={(e) => setDateOfChangeMeal(e.target.value)}
+              >
+                {[...Array(31)].map((_, index) => (
+                  <option key={index} value={index + 1}>
+                    {index + 1}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="w-fulll h-3 bg-slate-200 " />
+          <div className="flex flex-row">
+            <form onSubmit={handleAddAmountSubmit} className="mr-4">
+              <div className="form-group flex flex-row items-center mb-4">
+                <label
+                  htmlFor="amountInput"
+                  className="block text-lg font-medium text-gray-700 mr-2"
+                >
+                  Amount:
+                </label>
+                <input
+                  type="number"
+                  className="form-control p-2 text-lg"
+                  id="amountInput"
+                  value={amountInput}
+                  onChange={(e) => setAmountInput(e.target.value)}
+                />
+              </div>
+              <button
+                type="submit"
+                className={`btn btn-primary btn-lg btn-rounded ${
+                  isSubmitting ? "opacity-50 cursor-not-allowed" : ""
+                } p-2 bg-red-500 rounded-lg mr-4`}
+                disabled={isSubmitting}
+                onClick={handleAddAmountSubmit}
+              >
+                {isSubmitting ? "updating..." : "Add Amount"}
+              </button>
+            </form>
+
+            <form onSubmit={handleUpdateRoomMeal}>
+              <div className="form-group flex flex-row items-center mb-4">
+                <label htmlFor="newOwnerNameInput" className="mr-2">
+                  State
+                </label>
+                <input
+                  type="number"
+                  className="form-control p-2 text-lg"
+                  id="newOwnerNameInput"
+                  value={stateOfMeal}
+                  onChange={(e) => setStateOfMeal(e.target.value)}
+                />
+              </div>
+              <button
+                type="submit"
+                className={`btn btn-primary btn-lg btn-rounded ${
+                  isSubmitting ? "opacity-50 cursor-not-allowed" : ""
+                } p-2 bg-green-500 rounded-lg`}
+                disabled={isSubmitting}
+                onClick={handleUpdateRoomMeal}
+              >
+                {isSubmitting ? " updating..." : "Update Meal"}
+              </button>
+            </form>
+
+            <form onSubmit={handleGenerateMeal}>
+              <button
+                type="submit"
+                className={`btn btn-primary btn-lg btn-rounded ml-2 ${
+                  isSubmitting ? "opacity-50 cursor-not-allowed" : ""
+                } p-2 bg-yellow-500 rounded-lg`}
+                disabled={isSubmitting}
+                // onClick={handleUpdateRoomMeal}
+              >
+                {isSubmitting ? "updateing..." : "Generate Meal"}
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <h2 className="text text-3xl">Room Details</h2>
       <table className="border-collapse border border-green-800">
         <thead>
           <tr>
