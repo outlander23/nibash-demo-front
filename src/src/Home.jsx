@@ -19,12 +19,19 @@ function Home() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [fullMealsForRoom, setFullMealsForRoom] = useState([]);
+  const [halfMealsForRoom, setHalfMealsForRoom] = useState([]);
+  const [guestMealsForRoom, setguestMealsForRoom] = useState([]);
+
   useEffect(() => {
     // Fetch data using axios
     const fetchData = async () => {
       try {
         const response = await axios.get("http://localhost:3000/meals/table");
-        setRooms(response.data);
+        const sorteddata = response.data.sort(
+          (a, b) => a.roomNumber - b.roomNumber
+        );
+        setRooms(sorteddata);
         const getResponse = await axios.get(
           "http://localhost:3000/meals/extra"
         );
@@ -48,15 +55,25 @@ function Home() {
       let totalGivenTaka = 0;
 
       rooms.forEach((room) => {
+        let roomGuest = 0;
+        let roomfull = 0;
+        let roomHalf = 0;
+
         room.roommeal.forEach((meal, index) => {
           if (meal >= 1) {
             fullMealsArr[index] += meal;
+            roomfull += 1;
+            roomGuest += meal - 1.0;
             totalFullMealsCost += 65 * meal;
           } else if (meal === 0.5) {
             halfMealsArr[index] += 1;
             totalHalfMealsCost += 40;
+            roomHalf += 1;
           }
         });
+        room.roomGuest = roomGuest;
+        room.roomHalf = roomHalf;
+        room.roomfull = roomfull;
 
         totalGivenTaka += room.totalPayment;
       });
@@ -304,7 +321,10 @@ function Home() {
             <th className="border border-green-800 px-4 py-2">
               Total given taka
             </th>
-            <th>Room Number</th>
+            <th className="border border-green-800 px-4 py-2">Room Number</th>
+            <th className="border border-green-800 px-4 py-2">full meal</th>
+            <th className="border border-green-800 px-4 py-2">Half meal</th>
+            <th className="border border-green-800 px-4 py-2">guest meal</th>
           </tr>
         </thead>
         <tbody>
@@ -333,6 +353,15 @@ function Home() {
               <td className="border border-green-800 px-4 py-2">
                 {room.roomNumber}
               </td>
+              <td className="border border-green-800 px-4 py-2">
+                {room.roomfull}
+              </td>
+              <td className="border border-green-800 px-4 py-2">
+                {room.roomHalf}
+              </td>
+              <td className="border border-green-800 px-4 py-2">
+                {room.roomGuest}
+              </td>
             </tr>
           ))}
           {/* Render row for full and half meals */}
@@ -344,11 +373,11 @@ function Home() {
                   <td
                     key={index}
                     className="border border-green-800 px-4 py-2"
-                  >{`Full: ${mealCount}, Half: ${halfMeals[index]}`}</td>
+                  >{`Full: ${mealCount}, Half: ${halfMeals[index]}, cost:${
+                    mealCount * 65 + halfMeals[index] * 40
+                  }`}</td>
                 )
             )}
-            <td className="border border-green-800 px-4 py-2"></td>
-            <td className="border border-green-800 px-4 py-2"></td>
           </tr>
         </tbody>
       </table>
