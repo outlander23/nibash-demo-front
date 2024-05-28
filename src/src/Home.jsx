@@ -22,7 +22,9 @@ function Home() {
   const [fullMealsForRoom, setFullMealsForRoom] = useState([]);
   const [halfMealsForRoom, setHalfMealsForRoom] = useState([]);
   const [guestMealsForRoom, setguestMealsForRoom] = useState([]);
-
+  const [ache, setAche] = useState(0);
+  const [baki, setBaki] = useState(0);
+  const currrommnumber = 103;
   useEffect(() => {
     // Fetch data using axios
     const fetchData = async () => {
@@ -46,14 +48,18 @@ function Home() {
 
   useEffect(() => {
     const calculateMealsAndTotals = () => {
-      const fullMealsArr = Array.from({ length: 31 }, () => 0);
-      const halfMealsArr = Array.from({ length: 31 }, () => 0);
+      const fullMealsArr = Array.from({ length: 32 }, () => 0);
+      const halfMealsArr = Array.from({ length: 32 }, () => 0);
+
+      const fullMealsArr1 = Array.from({ length: 32 }, () => 0);
+      const halfMealsArr1 = Array.from({ length: 32 }, () => 0);
 
       let totalFullMealsCost = 0;
       let totalHalfMealsCost = 0;
       let totalExtraCost = 0;
       let totalGivenTaka = 0;
-
+      let achenaki = 0;
+      let baki = 0;
       rooms.forEach((room) => {
         let roomGuest = 0;
         let roomfull = 0;
@@ -86,6 +92,78 @@ function Home() {
         totalFullMealsCost + totalHalfMealsCost + totalExtraCost
       );
       setTotalGivenTaka(totalGivenTaka);
+
+      rooms.forEach((room) => {
+        let totalcost = 0;
+
+        let electricitybill = 0;
+        let khalabill = 0;
+        let extrasbill = 0;
+
+        if ([102, 128, 105, 225, 215, 222].includes(room.roomNumber)) {
+          electricitybill += 50;
+        }
+
+        if (![117, 112, 211, 216].includes(room.roomNumber)) {
+          electricitybill += 192;
+          khalabill += 210;
+          extrasbill += 51;
+        }
+
+        room.roommeal.forEach((meal, index) => {
+          if (meal > 0) {
+            if (index === 18) {
+              if (meal >= 1) {
+                totalcost += meal * 150 + 5 * (meal - 1);
+              }
+              if (room.roomNumber == 121) console.log("pak", totalcost);
+            } else if (index === 9) {
+              if (meal >= 1) {
+                totalcost += meal * 100;
+              } else if (meal === 0.5) {
+                totalcost +=
+                  room.roomNumber === 107 || room.roomNumber === 123 ? 70 : 40;
+              }
+            } else if (index >= 1 && index < 17) {
+              if (meal == 0.5) {
+                totalcost += 40;
+                if (room.roomNumber == 121) console.log(index);
+              } else if (meal == 1.5) {
+                totalcost += 110;
+              } else {
+                totalcost += meal * 65 + (meal - 1) * 5;
+              }
+              if (room.roomNumber == 121) console.log("pak age", totalcost);
+            } else if (index >= 17 && index <= 31) {
+              if (meal == 0.5) {
+                totalcost += 40;
+                if (room.roomNumber == currrommnumber) console.log(index);
+              } else if (meal == 1.5) {
+                totalcost += 115;
+              } else {
+                totalcost += meal * 70 + (meal - 1) * 5;
+              }
+
+              if (room.roomNumber == 121) console.log("pak", index, totalcost);
+            }
+          }
+        });
+
+        room.extrasbill = extrasbill * 1;
+        if (room.roomNumber == currrommnumber) console.log("pak", totalcost);
+        totalcost += electricitybill + khalabill + extrasbill;
+        room.totalcost = totalcost;
+        room.electricitybill = electricitybill;
+        room.khalabill = khalabill;
+        if (room.roomNumber == currrommnumber) console.log("pak", totalcost);
+        if (room.totalPayment - totalcost >= 0) {
+          achenaki += room.totalPayment - totalcost;
+        } else {
+          baki += -(room.totalPayment - totalcost);
+        }
+      });
+      setAche(achenaki);
+      setBaki(baki);
     };
 
     calculateMealsAndTotals();
@@ -93,8 +171,8 @@ function Home() {
 
   useEffect(() => {
     const calculateMeals = () => {
-      const fullMealsArr = Array.from({ length: 31 }, () => 0);
-      const halfMealsArr = Array.from({ length: 31 }, () => 0);
+      const fullMealsArr = Array.from({ length: 32 }, () => 0);
+      const halfMealsArr = Array.from({ length: 32 }, () => 0);
 
       rooms.forEach((room) => {
         room.roommeal.forEach((meal, index) => {
@@ -325,6 +403,14 @@ function Home() {
             <th className="border border-green-800 px-4 py-2">full meal</th>
             <th className="border border-green-800 px-4 py-2">Half meal</th>
             <th className="border border-green-800 px-4 py-2">guest meal</th>
+            <th className="border border-green-800 px-4 py-2">
+              electricitybill
+            </th>
+            <th className="border border-green-800 px-4 py-2">khalabill</th>
+            <th className="border border-green-800 px-4 py-2">extra</th>
+            <th className="border border-green-800 px-4 py-2">totalcost</th>
+
+            <th className="border border-green-800 px-4 py-2">due</th>
           </tr>
         </thead>
         <tbody>
@@ -362,6 +448,21 @@ function Home() {
               <td className="border border-green-800 px-4 py-2">
                 {room.roomGuest}
               </td>
+              <td className="border border-green-800 px-4 py-2">
+                {room.electricitybill}
+              </td>
+              <td className="border border-green-800 px-4 py-2">
+                {room.khalabill}
+              </td>
+              <td className="border border-green-800 px-4 py-2">
+                {room.extrasbill}
+              </td>
+              <td className="border border-green-800 px-4 py-2">
+                {room.totalcost}
+              </td>
+              <td className="border border-green-800 px-4 py-2">
+                {room.totalPayment - room.totalcost * 1}
+              </td>
             </tr>
           ))}
           {/* Render row for full and half meals */}
@@ -397,6 +498,8 @@ function Home() {
       <p> total given till now: {totalGivenTaka} </p>
 
       <p>remain: {totalGivenTaka - totalCostTillNow} </p>
+      <p>Ache: {ache}</p>
+      <p>Baki: {baki}</p>
     </div>
   );
 }
