@@ -24,7 +24,7 @@ function Home() {
   const [guestMealsForRoom, setguestMealsForRoom] = useState([]);
   const [ache, setAche] = useState(0);
   const [baki, setBaki] = useState(0);
-  const currrommnumber = 103;
+  const currrommnumber = 110;
   useEffect(() => {
     // Fetch data using axios
     const fetchData = async () => {
@@ -60,6 +60,7 @@ function Home() {
       let totalGivenTaka = 0;
       let achenaki = 0;
       let baki = 0;
+
       rooms.forEach((room) => {
         let roomGuest = 0;
         let roomfull = 0;
@@ -104,10 +105,10 @@ function Home() {
           electricitybill += 50;
         }
 
-        if (![117, 112, 211, 216].includes(room.roomNumber)) {
+        if (![117, 122, 211, 216].includes(room.roomNumber)) {
           electricitybill += 192;
           khalabill += 210;
-          extrasbill += 51;
+          extrasbill += 53;
         }
 
         room.roommeal.forEach((meal, index) => {
@@ -124,7 +125,7 @@ function Home() {
                 totalcost +=
                   room.roomNumber === 107 || room.roomNumber === 123 ? 70 : 40;
               }
-            } else if (index >= 1 && index < 17) {
+            } else if (index >= 1 && index <= 16) {
               if (meal == 0.5) {
                 totalcost += 40;
                 if (room.roomNumber == 121) console.log(index);
@@ -468,17 +469,25 @@ function Home() {
           {/* Render row for full and half meals */}
           <tr>
             <td className="border border-green-800 px-4 py-2">Meals</td>
-            {fullMeals.map(
-              (mealCount, index) =>
-                index >= 1 && (
-                  <td
-                    key={index}
-                    className="border border-green-800 px-4 py-2"
-                  >{`Full: ${mealCount}, Half: ${halfMeals[index]}, cost:${
-                    mealCount * 65 + halfMeals[index] * 40
-                  }`}</td>
-                )
-            )}
+            {fullMeals.map((mealCount, index) => {
+              if (index >= 1) {
+                let mealCost;
+                if (index >= 1 && index <= 16) {
+                  mealCost = mealCount * 65 + halfMeals[index] * 40;
+                } else if (index >= 17 && index <= 38) {
+                  mealCost = mealCount * 70 + halfMeals[index] * 40;
+                } else if (index === 18) {
+                  mealCost = mealCount * 150 + halfMeals[index] * 40;
+                }
+
+                return (
+                  <td key={index} className="border border-green-800 px-4 py-2">
+                    {`Full: ${mealCount}, Half: ${halfMeals[index]}, cost: ${mealCost}`}
+                  </td>
+                );
+              }
+              return null;
+            })}
           </tr>
         </tbody>
       </table>
